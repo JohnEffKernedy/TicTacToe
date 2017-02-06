@@ -12,44 +12,9 @@ struct Field {
 
 };
 
+char getWinner(struct Field fields[3][3]) {
+    //return 'x' or 'o' if there's a winner
 
-char getWinner(struct Field fields[3][3], int yCoord, int xCoord) {
-    char currentValue= fields[yCoord][xCoord].contains;
-    int victoryReq = 3;
-    int victoryCount;
-    for(int i = -1; i < 2; i++){
-        for(int j = -1; j < 2; j++){
-            if(!(i == 0 && j == 0)){
-                victoryCount = 1;
-                for(int k = 1; k < victoryReq; k++){
-                    int currentColumn = xCoord + k * i;
-                    if (currentColumn < 3 && currentColumn >= 0){
-                        int currentRow = yCoord + k * j;
-                        if ( currentRow < 3 && currentRow >=0){
-                          if (fields[currentRow][currentColumn].contains == currentValue) {
-                              victoryCount++;
-                          } else{ break;}
-                        }
-                    }
-                }
-                for(int l = 1; l < victoryReq; l++){
-                    int currentColumn = xCoord - l * i;
-                    if (currentColumn < 3 && currentColumn >= 0){
-                        int currentRow = yCoord - l * j;
-                        if (currentRow < 3 && currentRow >= 0){
-                            if (fields[currentRow][currentColumn].contains == currentValue) {
-                                victoryCount++;
-                            } else{ break;}
-                        }
-                    }
-                }
-                if (victoryCount == victoryReq){
-                    printf("Jemand hat gewonnen \n");
-                    return currentValue;
-                }
-            }
-        }
-    }
     return NULL;
 }
 
@@ -119,7 +84,7 @@ int main(void) {
         drawMatrix(fields);
 
         //determine if somebody won
-        winner = getWinner(fields, inputY, inputX);
+        winner = getWinner(fields);
         if (winner) {
             printf("%c is the winner!", winner);
             return 0;
