@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <mem.h>
 
+
 //every Field is addressable as a struct and contains its status
 struct Field {
     int coordinates[2];
@@ -75,49 +76,78 @@ void resetMatrix(struct Field fields[3][3]){
     }
 }
 
+
+int * getAiDecision(struct Field fields[3][3]){
+    int *r = malloc(2);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if(fields[i][j].played == false){
+                r[0] = i;
+                r[1] = j;
+                return r;
+            }
+        }
+    }
+    return NULL;
+}
+
 int main(void) {
 
     //setting up 2D struct array of unplayed Fields
     struct Field fields[3][3];
     resetMatrix(fields);
 
-
     //setting up game
     int round = 1;
     char winner = NULL;
-    int inputX;
-    int inputY;
-    bool xTurn = true;
+    int inputX, inputY;
+    bool xTurn = true, aiTurn = false, aiPlays = false;
+    int scanned = 0;
+    char yesNo;
 
+    printf("Do you want an AI opponent? (Y/N)\n");
+    scanned = scanf("%c", &yesNo);
+    while(scanned != 1 || (yesNo != 'n' && yesNo != 'N' && yesNo != 'y' && yesNo != 'Y')){
+        printf("Please enter 'y' or 'n'.\n");
+        fflush(stdin);
+        scanned = scanf("%c", &yesNo);
+    }
+    if(yesNo == 'y' || yesNo == 'Y'){
+        aiPlays = true;
+    }
 
     //game loop
     while (round < 10) {
 
         //whose turn
-        if(round % 2 != 0){
-            xTurn = true;
-        } else xTurn = false;
+        xTurn = !xTurn;
+        if(aiPlays) aiTurn = !aiTurn;
 
-        //message based on turn
-        if(xTurn){
-            printf("X's Turn. Please enter coordinates from '0,0' to '2,2' as 'x,y' ;\n");
-        }   else {
-            printf("O's Turn. Please enter coordinates from '0,0' to '2,2' as 'x,y' ;\n");
-        }
+        if(!aiTurn) {
+            //message based on turn
+            if (xTurn) {
+                printf("X's Turn. Please enter coordinates from '0,0' to '2,2' as 'x,y' ;\n");
+            } else {
+                printf("O's Turn. Please enter coordinates from '0,0' to '2,2' as 'x,y' ;\n");
+            }
 
-        //get Coordinates
-        int scanned = 0;
-        scanned = scanf("  %d,  %d", &inputX, &inputY);
-        while (scanned != 2 || ((inputX > 2) || (inputX < 0) || (inputY > 2) || (inputY < 0))){
-            printf("Error. Please enter valid coordinates\n");
-            fflush(stdin);
-            scanned = scanf("%d,%d", &inputX, &inputY);
-        }
+            //get Coordinates
+            scanned = scanf("  %d,  %d", &inputX, &inputY);
+            while (scanned != 2 || ((inputX > 2) || (inputX < 0) || (inputY > 2) || (inputY < 0))) {
+                printf("Error. Please enter valid coordinates\n");
+                fflush(stdin);
+                scanned = scanf("%d,%d", &inputX, &inputY);
+            }
 
-        //update matrix based on turn and coordinates
-        if(fields[inputY][inputX].played){
-            printf("Field already played. Choose an empty one.\n");
-            continue;
+            //update matrix based on turn and coordinates
+            if (fields[inputY][inputX].played) {
+                printf("Field already played. Choose an empty one.\n");
+                continue;
+            }
+        } else {
+            int *coord = getAiDecision(fields);
+            inputX = coord[1];
+            inputY = coord[0];
         }
         fields[inputY][inputX].played = true;
         if(xTurn){
@@ -129,6 +159,7 @@ int main(void) {
         }
 
         drawMatrix(fields);
+        printf("\n");
 
         //determine if somebody won
         winner = getWinner(fields, inputY, inputX);
