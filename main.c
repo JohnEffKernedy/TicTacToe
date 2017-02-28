@@ -9,14 +9,15 @@
 //every Field is addressable as a struct and contains its status
 struct Field {
     int coordinates[2];
-    bool played;
     char contains;
     char draw[4];
 };
 
 
-char getWinner(struct Field fields[3][3], int yCoord, int xCoord) {
-    char currentValue= fields[yCoord][xCoord].contains;
+bool isWinningState(struct Field fields[3][3], int yCoord, int xCoord, char playerToCheck) {
+    if(fields[yCoord][xCoord].contains != playerToCheck){
+        return false;
+    }
     int victoryReq = 3;
     int victoryCount;
     for(int i = -1; i < 2; i++){
@@ -28,7 +29,7 @@ char getWinner(struct Field fields[3][3], int yCoord, int xCoord) {
                     if (currentColumn < 3 && currentColumn >= 0){
                         int currentRow = yCoord + k * j;
                         if ( currentRow < 3 && currentRow >=0){
-                          if (fields[currentRow][currentColumn].contains == currentValue) {
+                          if (fields[currentRow][currentColumn].contains == playerToCheck) {
                               victoryCount++;
                           } else{ break;}
                         }
@@ -39,19 +40,19 @@ char getWinner(struct Field fields[3][3], int yCoord, int xCoord) {
                     if (currentColumn < 3 && currentColumn >= 0){
                         int currentRow = yCoord - l * j;
                         if (currentRow < 3 && currentRow >= 0){
-                            if (fields[currentRow][currentColumn].contains == currentValue) {
+                            if (fields[currentRow][currentColumn].contains == playerToCheck) {
                                 victoryCount++;
                             } else{ break;}
                         }
                     }
                 }
                 if (victoryCount == victoryReq){
-                    return currentValue;
+                    return true;
                 }
             }
         }
     }
-    return NULL;
+    return false;
 }
 
 void drawMatrix(struct Field fields[3][3]){
@@ -68,7 +69,6 @@ void resetMatrix(struct Field fields[3][3]){
         for (int j = 0; j < 3; j++) {
             struct Field currentField = {
                     .coordinates = {j, i},
-                    .played = false,
                     .contains = NULL,
                     .draw = "[ ]"
             };
@@ -77,26 +77,27 @@ void resetMatrix(struct Field fields[3][3]){
     }
 }
 
-int rate(struct Field fields[3][3], int depth, char currPlayer){
-    char winner = NULL;
+int rate(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer){
+    bool winningState = false;
+    bool losingState = false;
     for(int i = 0; i < 3; i ++){
-        if(winner) continue;
+        if(winningState || losingState) continue;
         for(int j = 0; j < 3; j++){
-            winner = getWinner(fields, i, j);
+            winningState = isWinningState(fields, i, j, currPlayer);
+            losingState = isWinningState(fields, i, j, oppPlayer);
         }
 
     }
-    if(!winner) return 0;
-    if (winner == currPlayer){
-        return 10 -depth;
-    } else return depth -10;
-
+    if (winningState){
+        return 10 - depth;
+    } else if (losingState) return depth -10;
+    else return 0;
 }
 
 bool boardIsFull(struct Field fields[3][3]){
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            if(!fields[i][j].played){
+            if(!fields[i][j].contains){
                 return false;
             }
         }
@@ -105,9 +106,8 @@ bool boardIsFull(struct Field fields[3][3]){
 }
 
 int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove){
-    int rating = rate(fields, depth, currPlayer);
-    if(rating > 0) return rating;
-    if(rating < 0) return rating;
+    int rating = rate(fields, depth, currPlayer, oppPlayer);
+    if(rating != 0) return rating;
     if(boardIsFull(fields)) return 0;
 
     if(isMaximiserMove){
@@ -115,12 +115,10 @@ int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
 
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
-                if(fields[i][j].played == false) {
+                if(!fields[i][j].contains) {
                     fields[i][j].contains = currPlayer;
-                    fields[i][j].played = true;
                     best = max(best, minimax(fields, depth+1, currPlayer, oppPlayer, !isMaximiserMove));
                     fields[i][j].contains = NULL;
-                    fields[i][j].played = false;
                 }
             }
         }
@@ -131,12 +129,10 @@ int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
 
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
-                if(fields[i][j].played == false) {
+                if(!fields[i][j].contains) {
                     fields[i][j].contains = oppPlayer;
-                    fields[i][j].played = true;
                     best = min(best, minimax(fields, depth+1, currPlayer, oppPlayer, !isMaximiserMove));
                     fields[i][j].contains = NULL;
-                    fields[i][j].played = false;
                 }
             }
         }
@@ -152,11 +148,9 @@ int * getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer){
     int bestRating = -1000;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            if(fields[i][j].played == false){
-                fields[i][j].played = true;
+            if(!fields[i][j].contains){
                 fields[i][j].contains = currPlayer;
-                int currentRating = minimax(fields, 0, currPlayer, oppPlayer, false);
-                fields[i][j].played = false;
+                int currentRating = minimax(fields, 0, currPlayer, oppPlayer, true);
                 fields[i][j].contains = NULL;
                 if(currentRating > bestRating){
                     r[0] = i;
@@ -166,18 +160,18 @@ int * getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer){
             }
         }
     }
+    printf("The best rated move has %d points\n", bestRating);
     return r;
 }
 
 int main(void) {
-
     //setting up 2D struct array of unplayed Fields
     struct Field fields[3][3];
     resetMatrix(fields);
 
     //setting up game
     int round = 1;
-    char winner = NULL;
+    bool winningState = false;
     int inputX, inputY;
     bool xTurn = true, aiTurn = false, aiPlays = false;
     int scanned = 0;
@@ -195,26 +189,28 @@ int main(void) {
     if(yesNo == 'y' || yesNo == 'Y'){
         aiPlays = true;
     }
+
+    printf("Do you want to begin? (Y/N)\n");
+    scanned = scanf("%c", &yesNo);
+    while(scanned != 1 || (yesNo != 'n' && yesNo != 'N' && yesNo != 'y' && yesNo != 'Y')){
+        printf("Please enter 'y' or 'n'.\n");
+        fflush(stdin);
+        scanned = scanf("%c", &yesNo);
+    }
+    if(yesNo == 'y' || yesNo == 'Y'){
+        aiTurn = false;
+    } else aiTurn = true;
+
     currentPlayer = 'x';
     oppPlayer = 'o';
+
+
     //game loop
     while (round < 10) {
 
-        //whose turn
-        xTurn = !xTurn;
-        if(currentPlayer == 'x'){
-            currentPlayer = 'o';
-            oppPlayer = 'x';
-        } else{
-            currentPlayer = 'x';
-            oppPlayer = 'o';
-        }
-
-        if(aiPlays) aiTurn = !aiTurn;
-
         if(!aiTurn) {
             //message based on turn
-            if (xTurn) {
+            if (currentPlayer == 'x') {
                 printf("X's Turn. Please enter coordinates from '0,0' to '2,2' as 'x,y' ;\n");
             } else {
                 printf("O's Turn. Please enter coordinates from '0,0' to '2,2' as 'x,y' ;\n");
@@ -229,17 +225,8 @@ int main(void) {
             }
 
             //update matrix based on turn and coordinates
-            if (fields[inputY][inputX].played) {
+            if (fields[inputY][inputX].contains) {
                 printf("Field already played. Choose an empty one.\n");
-                xTurn = !xTurn;
-                if(currentPlayer == 'x'){
-                    currentPlayer = 'o';
-                    oppPlayer = 'x';
-                } else{
-                    currentPlayer = 'x';
-                    oppPlayer = 'o';
-                }
-
                 aiTurn = !aiTurn;
                 continue;
             }
@@ -263,8 +250,7 @@ int main(void) {
             }
 
         }
-        fields[inputY][inputX].played = true;
-        if(xTurn){
+        if(currentPlayer == 'x'){
             fields[inputY][inputX].contains = 'x';
             strncpy(fields[inputY][inputX].draw, "[X]", 3);
         } else {
@@ -276,14 +262,14 @@ int main(void) {
         printf("\n");
 
         //determine if somebody won
-        winner = getWinner(fields, inputY, inputX);
-        if (winner || round == 9) {
+        winningState = isWinningState(fields, inputY, inputX, currentPlayer);
+        if (winningState || round == 9) {
             fflush(stdin);
-            if(round == 9 && !winner){
+            if(round == 9 && !winningState){
                 printf("Draw!\n");
             }
-            if(winner){
-                printf("%c is the winner!\n", winner);
+            if(winningState){
+                printf("%c is the winner!\n", currentPlayer);
             }
             printf("Play again? (Y/N)?\n");
             char input;
@@ -293,6 +279,14 @@ int main(void) {
             } else return 0;
 
         }
+        if(currentPlayer == 'x'){
+            currentPlayer = 'o';
+            oppPlayer = 'x';
+        } else{
+            currentPlayer = 'x';
+            oppPlayer = 'o';
+        }
+        if(aiPlays) aiTurn = !aiTurn;
         round++;
     }
 
