@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <mem.h>
+#include <windef.h>
+#include <time.h>
 
 
 //every Field is addressable as a struct and contains its status
@@ -10,7 +12,6 @@ struct Field {
     bool played;
     char contains;
     char draw[4];
-
 };
 
 
@@ -76,19 +77,96 @@ void resetMatrix(struct Field fields[3][3]){
     }
 }
 
+int rate(struct Field fields[3][3], int depth, char currPlayer){
+    char winner = NULL;
+    for(int i = 0; i < 3; i ++){
+        if(winner) continue;
+        for(int j = 0; j < 3; j++){
+            winner = getWinner(fields, i, j);
+        }
 
-int * getAiDecision(struct Field fields[3][3]){
-    int *r = malloc(2);
+    }
+    if(!winner) return 0;
+    if (winner == currPlayer){
+        return 10 -depth;
+    } else return depth -10;
+
+}
+
+bool boardIsFull(struct Field fields[3][3]){
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            if(fields[i][j].played == false){
-                r[0] = i;
-                r[1] = j;
-                return r;
+            if(!fields[i][j].played){
+                return false;
             }
         }
     }
-    return NULL;
+    return true;
+}
+
+int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove){
+    int rating = rate(fields, depth, currPlayer);
+    if(rating > 0) return rating;
+    if(rating < 0) return rating;
+    if(boardIsFull(fields)) return 0;
+
+    if(isMaximiserMove){
+        int best = -1000;
+
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+                if(fields[i][j].played == false) {
+                    fields[i][j].contains = currPlayer;
+                    fields[i][j].played = true;
+                    best = max(best, minimax(fields, depth+1, currPlayer, oppPlayer, !isMaximiserMove));
+                    fields[i][j].contains = NULL;
+                    fields[i][j].played = false;
+                }
+            }
+        }
+        return best;
+
+    } else {
+        int best = 1000;
+
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+                if(fields[i][j].played == false) {
+                    fields[i][j].contains = oppPlayer;
+                    fields[i][j].played = true;
+                    best = min(best, minimax(fields, depth+1, currPlayer, oppPlayer, !isMaximiserMove));
+                    fields[i][j].contains = NULL;
+                    fields[i][j].played = false;
+                }
+            }
+        }
+        return best;
+
+    }
+
+
+}
+
+int * getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer){
+    int *r = malloc(2);
+    int bestRating = -1000;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if(fields[i][j].played == false){
+                fields[i][j].played = true;
+                fields[i][j].contains = currPlayer;
+                int currentRating = minimax(fields, 0, currPlayer, oppPlayer, false);
+                fields[i][j].played = false;
+                fields[i][j].contains = NULL;
+                if(currentRating > bestRating){
+                    r[0] = i;
+                    r[1] = j;
+                    bestRating = currentRating;
+                }
+            }
+        }
+    }
+    return r;
 }
 
 int main(void) {
@@ -104,6 +182,8 @@ int main(void) {
     bool xTurn = true, aiTurn = false, aiPlays = false;
     int scanned = 0;
     char yesNo;
+    char currentPlayer;
+    char oppPlayer;
 
     printf("Do you want an AI opponent? (Y/N)\n");
     scanned = scanf("%c", &yesNo);
@@ -115,12 +195,21 @@ int main(void) {
     if(yesNo == 'y' || yesNo == 'Y'){
         aiPlays = true;
     }
-
+    currentPlayer = 'x';
+    oppPlayer = 'o';
     //game loop
     while (round < 10) {
 
         //whose turn
         xTurn = !xTurn;
+        if(currentPlayer == 'x'){
+            currentPlayer = 'o';
+            oppPlayer = 'x';
+        } else{
+            currentPlayer = 'x';
+            oppPlayer = 'o';
+        }
+
         if(aiPlays) aiTurn = !aiTurn;
 
         if(!aiTurn) {
@@ -142,12 +231,37 @@ int main(void) {
             //update matrix based on turn and coordinates
             if (fields[inputY][inputX].played) {
                 printf("Field already played. Choose an empty one.\n");
+                xTurn = !xTurn;
+                if(currentPlayer == 'x'){
+                    currentPlayer = 'o';
+                    oppPlayer = 'x';
+                } else{
+                    currentPlayer = 'x';
+                    oppPlayer = 'o';
+                }
+
+                aiTurn = !aiTurn;
                 continue;
             }
         } else {
-            int *coord = getAiDecision(fields);
-            inputX = coord[1];
-            inputY = coord[0];
+            if(round == 1){
+                int numField = clock() % 10;
+                for(int i = 0; i < 3; i++){
+                    for(int j = 0; j < 3;j++){
+                        if(numField == 0){
+                            inputX = i;
+                            inputY = j;
+                        }
+                        numField -= 1;
+                    }
+                }
+
+            } else {
+                int *coord = getAiDecision(fields, currentPlayer, oppPlayer);
+                inputX = coord[1];
+                inputY = coord[0];
+            }
+
         }
         fields[inputY][inputX].played = true;
         if(xTurn){
