@@ -107,7 +107,7 @@ bool boardIsFull(struct Field fields[3][3]){
 int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove){
     int rating = rate(fields, depth, currPlayer, oppPlayer);
     if(rating != 0) return rating;
-    if(boardIsFull(fields)) return 0;
+    if(boardIsFull(fields)) return 0 - depth; //Unterscheidung wie schnell Remis erreicht wird (needs testing)
 
     if(isMaximiserMove){
         int best = -1000;
@@ -149,7 +149,7 @@ int * getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer){
         for (int j = 0; j < 3; j++) {
             if(!fields[i][j].contains){
                 fields[i][j].contains = currPlayer;
-                int currentRating = minimax(fields, 0, currPlayer, oppPlayer, true);
+                int currentRating = minimax(fields, 0, currPlayer, oppPlayer, false);
                 fields[i][j].contains = NULL;
                 ratings[counter] = currentRating;
                 counter++;
