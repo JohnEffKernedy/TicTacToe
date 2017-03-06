@@ -86,11 +86,10 @@ int rate(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer){
             winningState = isWinningState(fields, i, j, currPlayer);
             losingState = isWinningState(fields, i, j, oppPlayer);
         }
-
     }
     if (winningState){
         return 10 - depth;
-    } else if (losingState) return depth -10;
+    } else if (losingState) return depth - 10;
     else return 0;
 }
 
@@ -139,19 +138,21 @@ int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
         return best;
 
     }
-
-
 }
 
 int * getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer){
     int *r = malloc(2);
     int bestRating = -1000;
+    int ratings[10]; //Ratings werden mitgespeichert, zur besseren Übersicht
+    int counter = 0;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if(!fields[i][j].contains){
                 fields[i][j].contains = currPlayer;
                 int currentRating = minimax(fields, 0, currPlayer, oppPlayer, true);
                 fields[i][j].contains = NULL;
+                ratings[counter] = currentRating;
+                counter++;
                 if(currentRating > bestRating){
                     r[0] = i;
                     r[1] = j;
