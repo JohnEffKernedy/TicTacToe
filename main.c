@@ -273,11 +273,14 @@ int main(void) {
             if (round == 9 && !winningState) {
                 printf("Draw!\n");
             }
-            if (!aiPlays) {
-                printf("%c is the winner!\n", currentPlayer);
-            } else if(!aiTurn){
-                printf("Player (%c) is the winner!\n", currentPlayer);
-            } else printf("AI is the winner!\n");
+            if(winningState){
+                if (!aiPlays) {
+                    printf("%c is the winner!\n", currentPlayer);
+                } else if(!aiTurn){
+                    printf("Player (%c) is the winner!\n", currentPlayer);
+                } else printf("AI is the winner!\n");
+
+            }
             printf("Play again? (Y/N)?\n");
             char input;
             int numScanned = scanf("%c", &input);
