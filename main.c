@@ -1,9 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <mem.h>
-#include <windef.h>
-#include <time.h>
+#include <stdlib.h>
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 
 //every Field is addressable as a struct and contains its status
@@ -103,7 +104,7 @@ bool boardIsFull(struct Field fields[3][3]) {
     return true;
 }
 
-int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove) {
+int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove) {
     int rating = 0;
     rating = rate(fields, depth, currPlayer, oppPlayer);
     if (rating != 0) {
@@ -119,7 +120,7 @@ int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = currPlayer;
-                    best = max(best, minimax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove));
+                    best = MAX(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove));
                     fields[i][j].contains = NULL;
                 }
             }
@@ -133,7 +134,7 @@ int minimax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = oppPlayer;
-                    best = min(best, minimax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove));
+                    best = MIN(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove));
                     fields[i][j].contains = NULL;
                 }
             }
@@ -150,7 +151,7 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer) {
         for (int j = 0; j < 3; j++) {
             if (!fields[i][j].contains) {
                 fields[i][j].contains = currPlayer;
-                int currentRating = minimax(fields, 0, currPlayer, oppPlayer, false);
+                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false);
                 fields[i][j].contains = NULL;
                 if (currentRating > bestRating) {
                     r[0] = i;
@@ -236,7 +237,7 @@ int main(void) {
             }
         } else {
             if (round == 1) {
-                int numField = clock() % 10;
+                int numField = rand() % 10;
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 3; j++) {
                         if (numField == 0) {
@@ -299,6 +300,4 @@ int main(void) {
         if (aiPlays) aiTurn = !aiTurn;
         round++;
     }
-
-
 }
