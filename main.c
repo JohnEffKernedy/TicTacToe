@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <mem.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -104,7 +105,7 @@ bool boardIsFull(struct Field fields[3][3]) {
     return true;
 }
 
-int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove, int maxDepth) {
+int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove, int maxDepth, int alpha, int beta) {
     int rating = 0;
     rating = rate(fields, depth, currPlayer, oppPlayer);
     if (rating != 0 || depth == maxDepth) {
@@ -114,32 +115,40 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
     }
 
     if (isMaximiserMove) {
-        int best = -1000;
-
+        int maxValue = alpha;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = currPlayer;
-                    best = MAX(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth));
+                    int value = MAX(maxValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, maxValue, beta));
                     fields[i][j].contains = NULL;
+                    if (value > maxValue) {
+                        maxValue = value;
+                        if (maxValue >= beta)
+                            break;
+                    }
                 }
             }
         }
-        return best;
+        return maxValue;
 
     } else {
-        int best = 1000;
-
+        int minValue = beta;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = oppPlayer;
-                    best = MIN(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth));
+                    int value = MIN(minValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, alpha, minValue));
                     fields[i][j].contains = NULL;
+                    if (value < minValue) {
+                        minValue = value;
+                        if (minValue <= alpha)
+                            break;
+                    }
                 }
             }
         }
-        return best;
+        return minValue;
 
     }
 }
@@ -151,7 +160,7 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, i
         for (int j = 0; j < 3; j++) {
             if (!fields[i][j].contains) {
                 fields[i][j].contains = currPlayer;
-                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false, complex);
+                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false, complex,-1000,1000);
                 fields[i][j].contains = NULL;
                 if (currentRating > bestRating) {
                     r[0] = i;
@@ -270,7 +279,10 @@ int main(void) {
 
             } else {
                 printf("The AI plays: \n");
+                double start = clock();
                 int *coord = getAiDecision(fields, currentPlayer, oppPlayer, maxDepth);
+                double end = clock();
+                printf("%lf seconds passed\n", (end-start)/1000);
                 inputX = coord[1];
                 inputY = coord[0];
             }
