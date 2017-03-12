@@ -104,10 +104,10 @@ bool boardIsFull(struct Field fields[3][3]) {
     return true;
 }
 
-int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove) {
+int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove, int maxDepth) {
     int rating = 0;
     rating = rate(fields, depth, currPlayer, oppPlayer);
-    if (rating != 0) {
+    if (rating != 0 || depth == maxDepth) {
         return rating;
     } else if (boardIsFull(fields)) {
         return 0;
@@ -120,7 +120,7 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = currPlayer;
-                    best = MAX(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove));
+                    best = MAX(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth));
                     fields[i][j].contains = NULL;
                 }
             }
@@ -134,7 +134,7 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = oppPlayer;
-                    best = MIN(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove));
+                    best = MIN(best, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth));
                     fields[i][j].contains = NULL;
                 }
             }
@@ -144,14 +144,14 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
     }
 }
 
-int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer) {
+int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, int complex) {
     int *r = malloc(2);
     int bestRating = -1000;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (!fields[i][j].contains) {
                 fields[i][j].contains = currPlayer;
-                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false);
+                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false, complex);
                 fields[i][j].contains = NULL;
                 if (currentRating > bestRating) {
                     r[0] = i;
@@ -163,6 +163,24 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer) {
     }
     printf("The best rated move has %d points\n", bestRating);
     return r;
+}
+
+int difficulty(int scanned){
+    printf("Select difficulty (easy(e),medium(m),impossible(i))\n");
+    char diff;
+    scanned = scanf("%c", &diff);
+    int maxDepth = 0;
+    while (scanned != 1 || (diff != 'e' && diff != 'E' && diff != 'm' && diff != 'M' && diff != 'i' && diff != 'I')) {
+        printf("Please enter 'e', 'm' or 'i'.\n");
+        fflush(stdin);
+        scanned = scanf("%c", &diff);
+    }
+    if (diff == 'e' || diff == 'E'){
+        maxDepth = 1;
+    } else if (diff == 'm' || diff == 'M'){
+        maxDepth = 3;
+    } else maxDepth = 10;
+    return maxDepth;
 }
 
 int main(void) {
@@ -177,6 +195,7 @@ int main(void) {
     bool xTurn = true, aiTurn = false, aiPlays = false;
     int scanned = 0;
     char yesNo;
+    int maxDepth = 0;
     char currentPlayer;
     char oppPlayer;
 
@@ -192,6 +211,7 @@ int main(void) {
     }
 
     if (aiPlays) {
+        maxDepth = difficulty(scanned);
         printf("Do you want to begin? (Y/N)\n");
         scanned = scanf("%c", &yesNo);
         while (scanned != 1 || (yesNo != 'n' && yesNo != 'N' && yesNo != 'y' && yesNo != 'Y')) {
@@ -236,7 +256,7 @@ int main(void) {
                 continue;
             }
         } else {
-            if (round == 1) {
+            if (round == 1 && maxDepth != 10) {
                 int numField = rand() % 10;
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 3; j++) {
@@ -250,7 +270,7 @@ int main(void) {
 
             } else {
                 printf("The AI plays: \n");
-                int *coord = getAiDecision(fields, currentPlayer, oppPlayer);
+                int *coord = getAiDecision(fields, currentPlayer, oppPlayer, maxDepth);
                 inputX = coord[1];
                 inputY = coord[0];
             }
