@@ -197,16 +197,11 @@ int main(void) {
     struct Field fields[3][3];
     resetMatrix(fields);
 
-    //setting up game
-    int round = 1;
-    bool winningState = false;
-    int inputX, inputY;
-    bool xTurn = true, aiTurn = false, aiPlays = false;
-    int scanned = 0;
-    char yesNo;
-    int maxDepth = 0;
-    char currentPlayer;
-    char oppPlayer;
+    //setting up game variables
+    int inputX, inputY, round = 1, scanned = 0, maxDepth = 0;
+    char yesNo, currentPlayer = 'x', oppPlayer = 'o';
+    bool xTurn = true, aiTurn = false, aiPlays = false, winningState = false;
+
 
     printf("Do you want an AI opponent? (Y/N)\n");
     scanned = scanf("%c", &yesNo);
@@ -233,14 +228,13 @@ int main(void) {
         } else aiTurn = true;
     }
 
-
-    currentPlayer = 'x';
-    oppPlayer = 'o';
-
+    // initial view
     if (!aiTurn) drawMatrix(fields);
+
     //game loop
     while (round < 10) {
 
+        // players turn only
         if (!aiTurn) {
             //message based on turn
             if (currentPlayer == 'x' && !aiPlays) {
@@ -259,14 +253,29 @@ int main(void) {
                 scanned = scanf("%d,%d", &inputX, &inputY);
             }
 
-            //update matrix based on turn and coordinates
             if (fields[inputY][inputX].contains) {
                 printf("Field already played, please choose an empty one.\n");
                 continue;
             }
         } else {
-            if (round == 1 && maxDepth != 10) {
-                int numField = rand() % 10;
+
+            if(round == 1){
+                //init random generator
+                time_t t;
+                srand((unsigned) time(&t));
+                int numField = 1;
+                    // AI starts with random move
+                if (round == 1 && maxDepth != 10) {
+                    numField = rand() % 10;
+
+                    // AI starts with random optimal move
+                } else if (round == 1 && maxDepth == 10){
+                    numField = 1;
+                    while ((numField % 2) != 0) {
+                        numField = rand() % 10;
+                    }
+                }
+
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 3; j++) {
                         if (numField == 0) {
