@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include <mem.h>
+#include <memory.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -14,7 +14,6 @@ struct Field {
     char contains;
     char draw[4];
 };
-
 
 bool isWinningState(struct Field fields[3][3], int yCoord, int xCoord, char playerToCheck) {
     if (fields[yCoord][xCoord].contains != playerToCheck) {
@@ -174,15 +173,14 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, i
     return r;
 }
 
-int difficulty(int scanned){
+int difficulty(){
     printf("Select difficulty (easy(e),medium(m),impossible(i))\n");
-    char diff;
-    scanned = scanf("%c", &diff);
+    int diff = getchar();
     int maxDepth = 0;
-    while (scanned != 1 || (diff != 'e' && diff != 'E' && diff != 'm' && diff != 'M' && diff != 'i' && diff != 'I')) {
+    while (diff != 'e' && diff != 'E' && diff != 'm' && diff != 'M' && diff != 'i' && diff != 'I') {
         printf("Please enter 'e', 'm' or 'i'.\n");
-        fflush(stdin);
-        scanned = scanf("%c", &diff);
+        diff = getchar();
+        getchar();
     }
     if (diff == 'e' || diff == 'E'){
         maxDepth = 1;
@@ -195,45 +193,47 @@ int difficulty(int scanned){
 int main(void) {
     //setting up 2D struct array of unplayed Fields
     struct Field fields[3][3];
-    resetMatrix(fields);
+
 
     //setting up game variables
-    int inputX, inputY, round = 1, scanned = 0, maxDepth = 0;
+    int inputX, inputY, round = 1, scanChar = 0, maxDepth = 0;
     char yesNo, currentPlayer = 'x', oppPlayer = 'o';
     bool xTurn = true, aiTurn = false, aiPlays = false, winningState = false;
 
 
-    printf("Do you want an AI opponent? (Y/N)\n");
-    scanned = scanf("%c", &yesNo);
-    while (scanned != 1 || (yesNo != 'n' && yesNo != 'N' && yesNo != 'y' && yesNo != 'Y')) {
-        printf("Please enter 'y' or 'n'.\n");
-        fflush(stdin);
-        scanned = scanf("%c", &yesNo);
-    }
-    if (yesNo == 'y' || yesNo == 'Y') {
-        aiPlays = true;
-    }
-
-    if (aiPlays) {
-        maxDepth = difficulty(scanned);
-        printf("Do you want to begin? (Y/N)\n");
-        scanned = scanf("%c", &yesNo);
-        while (scanned != 1 || (yesNo != 'n' && yesNo != 'N' && yesNo != 'y' && yesNo != 'Y')) {
-            printf("Please enter 'y' or 'n'.\n");
-            fflush(stdin);
-            scanned = scanf("%c", &yesNo);
-        }
-        if (yesNo == 'y' || yesNo == 'Y') {
-            aiTurn = false;
-        } else aiTurn = true;
-    }
-
-    // initial view
-    if (!aiTurn) drawMatrix(fields);
 
     //game loop
     while (round < 10) {
+        if(round == 1){
+            resetMatrix(fields);
+            printf("Do you want an AI opponent? (Y/N)\n");
+            scanChar = getchar();
+            while (scanChar != 'n' && scanChar != 'N' && scanChar != 'y' && scanChar != 'Y') {
+                printf("Please enter 'y' or 'n'.\n");
+                scanChar = getchar();
+            }
+            if (scanChar == 'y' || scanChar == 'Y') {
+                aiPlays = true;
+            }
 
+            if (aiPlays) {
+                maxDepth = difficulty();
+                printf("Do you want to begin? (Y/N)\n");
+                scanChar = getchar();
+                while ((scanChar != 'n' && scanChar != 'N' && scanChar != 'y' && scanChar != 'Y')) {
+                    getchar();
+                    printf("Please enter 'y' or 'n'.\n");
+                    scanChar = getchar();
+                }
+                if (scanChar == 'y' || scanChar == 'Y') {
+                    aiTurn = false;
+                } else aiTurn = true;
+            }
+
+            // initial view
+            if (!aiTurn) drawMatrix(fields);
+
+        }
         // players turn only
         if (!aiTurn) {
             //message based on turn
@@ -246,11 +246,11 @@ int main(void) {
             }
 
             //get Coordinates
-            scanned = scanf("  %d,  %d", &inputX, &inputY);
-            while (scanned != 2 || ((inputX > 2) || (inputX < 0) || (inputY > 2) || (inputY < 0))) {
+            scanChar = scanf("%d,%d", &inputX, &inputY);
+            while (scanChar != 2 || ((inputX > 2) || (inputX < 0) || (inputY > 2) || (inputY < 0))) {
+                getchar();
                 printf("Error. Please enter valid coordinates.\n");
-                fflush(stdin);
-                scanned = scanf("%d,%d", &inputX, &inputY);
+                scanChar = scanf("%d,%d", &inputX, &inputY);
             }
 
             if (fields[inputY][inputX].contains) {
@@ -323,13 +323,14 @@ int main(void) {
                 } else printf("AI is the winner!\n");
 
             }
-            printf("Play again? (Y/N)?\n");
-            char input;
-            int numScanned = scanf("%c", &input);
-            if (numScanned == 1 && (input == 'Y' || input == 'y')) {
-                main();
-            } else return 0;
-
+            printf("Enter Y to play again, or any other letter to end the game.\n");
+            getchar();
+            scanChar = getchar();
+            if ((scanChar == 'Y' || scanChar == 'y')) {
+                round = 1;
+                continue;
+            }
+            return 0;
         }
         if (currentPlayer == 'x') {
             currentPlayer = 'o';
