@@ -197,7 +197,7 @@ int main(void) {
 
     //setting up game variables
     int inputX, inputY, round = 1, scanChar = 0, maxDepth = 0;
-    char yesNo, currentPlayer = 'x', oppPlayer = 'o';
+    char currentPlayer = 'x', oppPlayer = 'o';
     bool xTurn = true, aiTurn = false, aiPlays = false, winningState = false;
 
 
@@ -311,7 +311,6 @@ int main(void) {
         //determine if somebody won
         winningState = isWinningState(fields, inputY, inputX, currentPlayer);
         if (winningState || round == 9) {
-            fflush(stdin);
             if (round == 9 && !winningState) {
                 printf("Draw!\n");
             }
