@@ -63,6 +63,7 @@ void drawMatrix(struct Field fields[3][3]) {
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 void resetMatrix(struct Field fields[3][3]) {
@@ -70,7 +71,7 @@ void resetMatrix(struct Field fields[3][3]) {
         for (int j = 0; j < 3; j++) {
             struct Field currentField = {
                     .coordinates = {j, i},
-                    .contains = NULL,
+                    .contains = (long) NULL,
                     .draw = "[ ]"
             };
             fields[i][j] = currentField;
@@ -79,8 +80,8 @@ void resetMatrix(struct Field fields[3][3]) {
 }
 
 int rate(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer) {
-    bool winningState = false;
-    bool losingState = false;
+    bool winningState;
+    bool losingState;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             winningState = isWinningState(fields, i, j, currPlayer);
@@ -120,7 +121,7 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = currPlayer;
                     int value = MAX(maxValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, maxValue, beta));
-                    fields[i][j].contains = NULL;
+                    fields[i][j].contains = (long) NULL;
                     if (value > maxValue) {
                         maxValue = value;
                         if (maxValue >= beta)
@@ -138,7 +139,7 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = oppPlayer;
                     int value = MIN(minValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, alpha, minValue));
-                    fields[i][j].contains = NULL;
+                    fields[i][j].contains = (long) NULL;
                     if (value < minValue) {
                         minValue = value;
                         if (minValue <= alpha)
@@ -160,7 +161,7 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, i
             if (!fields[i][j].contains) {
                 fields[i][j].contains = currPlayer;
                 int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false, complex,-1000,1000);
-                fields[i][j].contains = NULL;
+                fields[i][j].contains = (long) NULL;
                 if (currentRating > bestRating) {
                     r[0] = i;
                     r[1] = j;
@@ -169,7 +170,6 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, i
             }
         }
     }
-    printf("The best rated move has %d points\n", bestRating);
     return r;
 }
 
@@ -198,7 +198,7 @@ int main(void) {
     //setting up game variables
     int inputX, inputY, round = 1, scanChar = 0, maxDepth = 0;
     char currentPlayer = 'x', oppPlayer = 'o';
-    bool xTurn = true, aiTurn = false, aiPlays = false, winningState = false;
+    bool aiTurn = false, aiPlays = false, winningState = false;
 
 
 
@@ -288,10 +288,7 @@ int main(void) {
 
             } else {
                 printf("The AI plays: \n");
-                double start = clock();
                 int *coord = getAiDecision(fields, currentPlayer, oppPlayer, maxDepth);
-                double end = clock();
-                printf("%lf seconds passed\n", (end-start)/1000);
                 inputX = coord[1];
                 inputY = coord[0];
             }
@@ -306,7 +303,6 @@ int main(void) {
         }
 
         drawMatrix(fields);
-        printf("\n");
 
         //determine if somebody won
         winningState = isWinningState(fields, inputY, inputX, currentPlayer);
