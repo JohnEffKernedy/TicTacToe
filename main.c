@@ -208,11 +208,9 @@ int main(void) {
             resetMatrix(fields);
             printf("Do you want an AI opponent? (Y/N)\n");
             scanChar = getchar();
-            printf("%d\n", scanChar);
             while (scanChar != 'n' && scanChar != 'N' && scanChar != 'y' && scanChar != 'Y') {
                 printf("Please enter 'y' or 'n'.\n");
                 scanChar = getchar();
-                printf("%d\n", scanChar);
             }
             if (scanChar == 'y' || scanChar == 'Y') {
                 aiPlays = true;
