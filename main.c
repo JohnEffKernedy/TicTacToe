@@ -15,6 +15,7 @@ struct Field {
     char draw[4];
 };
 
+//Determines if there is a winner (searches for three X's or O's - horizontal, vertical and diagonal)
 bool isWinningState(struct Field fields[3][3], int yCoord, int xCoord, char playerToCheck) {
     if (fields[yCoord][xCoord].contains != playerToCheck) {
         return false;
@@ -79,6 +80,7 @@ void resetMatrix(struct Field fields[3][3]) {
     }
 }
 
+//Rates the current situation on the field, higher value is better for the AI
 int rate(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer) {
     bool winningState;
     bool losingState;
@@ -86,9 +88,9 @@ int rate(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer) 
         for (int j = 0; j < 3; j++) {
             winningState = isWinningState(fields, i, j, currPlayer);
             losingState = isWinningState(fields, i, j, oppPlayer);
-            if (losingState) {
+            if (losingState) { //Player wins
                 return depth - 10;
-            } else if (winningState) return 10 - depth;
+            } else if (winningState) return 10 - depth; //AI wins (-depth is used to pref earlier wins e.g win in two moves is rated 8 vs three moves 7)
         }
     }
     return 0;
@@ -105,22 +107,23 @@ bool boardIsFull(struct Field fields[3][3]) {
     return true;
 }
 
+//MiniMax with Alpha Beta Cutoff - tries every possible move until a certain level of depth
 int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlayer, bool isMaximiserMove, int maxDepth, int alpha, int beta) {
     int rating = 0;
     rating = rate(fields, depth, currPlayer, oppPlayer);
     if (rating != 0 || depth == maxDepth) {
         return rating;
-    } else if (boardIsFull(fields)) {
+    } else if (boardIsFull(fields)) { //Field is full -> Draw
         return 0;
     }
-
+    //The AI tries to maximize its own move
     if (isMaximiserMove) {
         int maxValue = alpha;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = currPlayer;
-                    int value = MAX(maxValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, maxValue, beta));
+                    int value = MAX(maxValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, maxValue, beta)); //Recursive call to get the maximum value until a certain depth, next move is a player move
                     fields[i][j].contains = (long) NULL;
                     if (value > maxValue) {
                         maxValue = value;
@@ -133,12 +136,13 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
         return maxValue;
 
     } else {
+        //The algorithm assumes the enemy is also making an optimal move -> minimal result for the AI
         int minValue = beta;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (!fields[i][j].contains) {
                     fields[i][j].contains = oppPlayer;
-                    int value = MIN(minValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, alpha, minValue));
+                    int value = MIN(minValue, miniMax(fields, depth + 1, currPlayer, oppPlayer, !isMaximiserMove,maxDepth, alpha, minValue)); //Resurvice call to get the worst move for the AI/best move from the player, next move is an AI move
                     fields[i][j].contains = (long) NULL;
                     if (value < minValue) {
                         minValue = value;
@@ -153,6 +157,7 @@ int miniMax(struct Field fields[3][3], int depth, char currPlayer, char oppPlaye
     }
 }
 
+//Calculates the best move for the AI using MiniMax
 int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, int complex) {
     int *r = malloc(2);
     int bestRating = -1000;
@@ -160,7 +165,7 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, i
         for (int j = 0; j < 3; j++) {
             if (!fields[i][j].contains) {
                 fields[i][j].contains = currPlayer;
-                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false, complex,-1000,1000);
+                int currentRating = miniMax(fields, 0, currPlayer, oppPlayer, false, complex,-1000,1000); //Calls minimax with starting values for alpha and beta
                 fields[i][j].contains = (long) NULL;
                 if (currentRating > bestRating) {
                     r[0] = i;
@@ -173,6 +178,7 @@ int *getAiDecision(struct Field fields[3][3], char currPlayer, char oppPlayer, i
     return r;
 }
 
+//Allows the player to choose a difficulty level for the AI, this adjusts the depth the AI can calculate
 int difficulty(){
     printf("Select difficulty (easy(e),medium(m),impossible(i))\n");
     int diff = getchar();
@@ -268,7 +274,7 @@ int main(void) {
                 if (round == 1 && maxDepth != 10) {
                     numField = rand() % 10;
 
-                    // AI starts with random optimal move
+                    // AI starts with random optimal move (center or corners) not necessary but improves computing (comparable to opening libs in chess)
                 } else if (round == 1 && maxDepth == 10){
                     numField = 1;
                     while ((numField % 2) != 0) {
